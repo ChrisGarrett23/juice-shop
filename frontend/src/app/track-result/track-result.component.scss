@@ -1,21 +1,41 @@
+/*!
+ * Copyright (c) 2014-2026 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * SPDX-License-Identifier: MIT
+ */
+
+@use '../../styles/variables' as *;
+
 mat-card {
-  height: auto;
-  min-width: 380px;
-  width: 25%;
+  h1 {
+    margin-top: 0;
+  }
 }
 
-mat-table,
-.table-heading {
-  min-width: 420px;
-  width: 50%;
+.mdc-table {
+  align-self: center;
+  margin: 0 auto;           /* center the table block */
+  width: 90%;
+}
+
+.heading {
+  background: rgba(0, 0, 0, 0.2);
+  justify-content: center;
+  padding: $space-s $space-ml;
+  width: 90%;
+
+  h2 {
+    margin: 0;
+  }
 }
 
 .product-name {
-  margin-right: 25px;
+  margin-right: $space-l;
 }
 
 .table-wrapper {
-  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  margin-top: $space-xl;
 }
 
 .table-heading h4 {
@@ -23,5 +43,37 @@ mat-table,
 }
 
 .row.fa-4x svg {
-  margin-right: 10px;
+  margin-right: $space-s;
+}
+
+.mat-own-card {
+  display: block;
+  margin-left: 20%;
+  margin-right: 20%;
+}
+
+.bonus-container {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin-top: $space-s;
+  place-content: stretch center;
+
+  h2 {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.delivery-status {
+  text-align: center;
+}
+
+.eta-badge {
+  width: max-content;
+}
+
+@media (max-width: 959.98px) {
+  .mat-column-price { display: none; }
 }

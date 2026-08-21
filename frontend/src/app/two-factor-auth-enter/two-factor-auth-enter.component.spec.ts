@@ -1,4 +1,9 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing'
+/*
+ * Copyright (c) 2014-2026 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * SPDX-License-Identifier: MIT
+ */
+
+import { type ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { TwoFactorAuthEnterComponent } from './two-factor-auth-enter.component'
 import { SearchResultComponent } from '../search-result/search-result.component'
@@ -6,12 +11,11 @@ import { UserService } from '../Services/user.service'
 import { WindowRefService } from '../Services/window-ref.service'
 
 import { ReactiveFormsModule } from '@angular/forms'
-import { HttpClientTestingModule } from '@angular/common/http/testing'
+import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { RouterTestingModule } from '@angular/router/testing'
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 
 import { TranslateModule } from '@ngx-translate/core'
-import { CookieService, CookieModule } from 'ngx-cookie'
+import { CookieModule, CookieService } from 'ngy-cookie'
 
 import { MatCardModule } from '@angular/material/card'
 import { MatFormFieldModule } from '@angular/material/form-field'
@@ -23,58 +27,105 @@ import { MatTableModule } from '@angular/material/table'
 import { MatPaginatorModule } from '@angular/material/paginator'
 import { MatDialogModule } from '@angular/material/dialog'
 import { MatDividerModule } from '@angular/material/divider'
+import { MatGridListModule } from '@angular/material/grid-list'
+import { MatSnackBarModule } from '@angular/material/snack-bar'
+import { MatTooltipModule } from '@angular/material/tooltip'
 
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
+import { TwoFactorAuthService } from '../Services/two-factor-auth-service'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('TwoFactorAuthEnterComponent', () => {
-  let component: TwoFactorAuthEnterComponent
-  let fixture: ComponentFixture<TwoFactorAuthEnterComponent>
-  let userService
+    let component: TwoFactorAuthEnterComponent
+    let fixture: ComponentFixture<TwoFactorAuthEnterComponent>
+    let cookieService: any
+    let userService: any
+    let twoFactorAuthService: any
 
-  beforeEach(async(() => {
-    userService = jasmine.createSpyObj('UserService', ['login'])
-    userService.login.and.returnValue(of({}))
-    userService.isLoggedIn = jasmine.createSpyObj('userService.isLoggedIn', ['next'])
-    userService.isLoggedIn.next.and.returnValue({})
+    beforeEach(async () => {
+        userService = {
+            login: vi.fn().mockName("UserService.login")
+        }
+        userService.login.mockReturnValue(of({}))
+        userService.isLoggedIn = {
+            next: vi.fn().mockName("userService.isLoggedIn.next")
+        }
+        userService.isLoggedIn.next.mockReturnValue({})
+        twoFactorAuthService = {
+            verify: vi.fn().mockName("TwoFactorAuthService.verify")
+        }
+        twoFactorAuthService.verify.mockReturnValue(of({}))
 
-    TestBed.configureTestingModule({
-      imports: [
-        HttpClientTestingModule,
-        RouterTestingModule.withRoutes([
-          { path: 'search', component: SearchResultComponent }
-        ]),
-        ReactiveFormsModule,
-        CookieModule.forRoot(),
-        TranslateModule.forRoot(),
-        BrowserAnimationsModule,
-        MatCheckboxModule,
-        MatFormFieldModule,
-        MatCardModule,
-        MatIconModule,
-        MatInputModule,
-        MatTableModule,
-        MatPaginatorModule,
-        MatDialogModule,
-        MatDividerModule,
-        MatButtonModule
-      ],
-      declarations: [ TwoFactorAuthEnterComponent, SearchResultComponent ],
-      providers: [
-        { provide: UserService, useValue: userService },
-        CookieService,
-        WindowRefService
-      ]
+        TestBed.configureTestingModule({
+            imports: [RouterTestingModule.withRoutes([
+                    { path: 'search', component: SearchResultComponent }
+                ]),
+                ReactiveFormsModule,
+                CookieModule.forRoot(),
+                TranslateModule.forRoot(),
+                MatCheckboxModule,
+                MatFormFieldModule,
+                MatCardModule,
+                MatIconModule,
+                MatInputModule,
+                MatTableModule,
+                MatPaginatorModule,
+                MatDialogModule,
+                MatDividerModule,
+                MatButtonModule,
+                MatGridListModule,
+                MatSnackBarModule,
+                MatTooltipModule,
+                TwoFactorAuthEnterComponent, SearchResultComponent],
+            providers: [
+                { provide: UserService, useValue: userService },
+                { provide: TwoFactorAuthService, useValue: twoFactorAuthService },
+                CookieService,
+                WindowRefService,
+                CookieService,
+                provideHttpClient(withInterceptorsFromDi()),
+                provideHttpClientTesting()
+            ]
+        })
+            .compileComponents()
+        cookieService = TestBed.inject(CookieService)
     })
-    .compileComponents()
-  }))
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(TwoFactorAuthEnterComponent)
-    component = fixture.componentInstance
-    fixture.detectChanges()
-  })
+    beforeEach(() => {
+        fixture = TestBed.createComponent(TwoFactorAuthEnterComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
 
-  it('should create', () => {
-    expect(component).toBeTruthy()
-  })
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+
+    it('should store authentication token in cookie', () => {
+        twoFactorAuthService.verify.mockReturnValue(of({ token: 'TOKEN' }))
+        component.verify()
+
+        expect(cookieService.get('token')).toBe('TOKEN')
+    })
+
+    it('should store authentication token in local storage', () => {
+        twoFactorAuthService.verify.mockReturnValue(of({ token: 'TOKEN' }))
+        component.verify()
+
+        expect(localStorage.getItem('token')).toBe('TOKEN')
+    })
+
+    it('should store basket ID in session storage', () => {
+        twoFactorAuthService.verify.mockReturnValue(of({ bid: 42 }))
+        component.verify()
+
+        expect(sessionStorage.getItem('bid')).toBe('42')
+    })
+
+    it('should notice error when 2FA verification fails', () => {
+        twoFactorAuthService.verify.mockReturnValue(throwError({ error: 'Error' }))
+        component.verify()
+        expect(component.errored).toBe(true)
+    })
+
 })
